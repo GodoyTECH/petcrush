@@ -24,17 +24,42 @@ enum Objective {
   SOCIALIZATION
 }
 
+enum AuthProvider {
+  EMAIL_OTP
+  GOOGLE
+  APPLE
+  DEV
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
   name      String?
-  locale    String   @default("pt-BR")
-  region    String?
+  locale        String       @default("pt-BR")
+  region        String?
+  emailVerified Boolean      @default(false)
+  authProvider  AuthProvider @default(EMAIL_OTP)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   pets   Pet[]
   likes  Like[]
+
+  verificationCodes VerificationCode[]
+}
+
+model VerificationCode {
+  id        String   @id @default(uuid())
+  email     String
+  codeHash  String
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [email], references: [email], onDelete: Cascade)
+
+  @@index([email, createdAt])
 }
 
 model Pet {
