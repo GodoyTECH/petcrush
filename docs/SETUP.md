@@ -50,3 +50,18 @@ npm run dev
 ### Netlify + Neon integration note
 Netlify DB (powered by Neon) can auto-create a Neon DB when using `@netlify/neon`. citeturn0search5turn0search11turn0search20  
 For this repo we’re using **Render for API** + **Neon directly**, which is straightforward and stable.
+
+## Authentication env vars (Etapa 1)
+### API (`apps/api/.env`)
+- `JWT_SECRET` (obrigatório)
+- `OTP_SECRET` (recomendado)
+- `OTP_TTL_MINUTES` (opcional, padrão 10)
+- `GOOGLE_CLIENT_ID` (obrigatório para validar login Google)
+- `APPLE_CLIENT_ID` (obrigatório para validar login Apple)
+
+> No ambiente local, o OTP é exibido no log da API para facilitar desenvolvimento.
+
+### Web (`apps/web/.env`)
+- `VITE_API_URL`
+- `VITE_GOOGLE_CLIENT_ID`
+- `VITE_APPLE_CLIENT_ID`
