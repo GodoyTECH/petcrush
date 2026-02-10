@@ -1,3 +1,5 @@
+import { hasSaleContent, SALE_BLOCK_MESSAGE } from "./safety.js";
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 async function parseResponse(r, fallbackMessage) {
@@ -71,6 +73,21 @@ export async function listPets(params = {}) {
 }
 
 export async function createPet(token, payload) {
+  const fieldsForSaleCheck = {
+    displayName: payload?.displayName,
+    species: payload?.species,
+    breed: payload?.breed,
+    region: payload?.region,
+    about: payload?.about,
+    healthNotes: payload?.healthNotes
+  };
+
+  if (hasSaleContent(fieldsForSaleCheck)) {
+    const error = new Error(SALE_BLOCK_MESSAGE);
+    error.code = "SALE_CONTENT_BLOCKED";
+    throw error;
+  }
+
   const r = await fetch(`${API_URL}/pets`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },

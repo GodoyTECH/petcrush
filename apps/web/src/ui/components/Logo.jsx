@@ -8,7 +8,7 @@ export function Logo({ compact = false }) {
       </div>
       {!compact && (
         <div className="leading-tight">
-          <div className="font-semibold tracking-tight">PetCusher</div>
+          <div className="font-semibold tracking-tight">PetCrushes</div>
           <div className="text-xs text-white/60">match • donate • care</div>
         </div>
       )}

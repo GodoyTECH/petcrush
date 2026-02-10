@@ -16,13 +16,28 @@ const prisma = new PrismaClient();
 app.use(helmet());
 app.use(express.json({ limit: "2mb" }));
 app.use(morgan("dev"));
-app.use(cors({
-  origin: process.env.CORS_ORIGIN?.split(",") ?? "*",
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN?.split(",") ?? "*",
+    credentials: true
+  })
+);
 
 const PORT = process.env.PORT || 8080;
 const OTP_TTL_MINUTES = Number(process.env.OTP_TTL_MINUTES || 10);
+
+// ✅ Anti-venda (PetCrushes não é marketplace)
+const SALE_BLOCK_MESSAGE = "❌ O PetCrushes não permite venda. Use Match ou Doação/Adoção.";
+const SALE_BLOCKED_REGEX =
+  /(?:\bR\$\b|\$|\bvendo\b|\bvenda\b|\bvalor\b|\bpreço\b|\bpreco\b|\bpagamento\b|\bpix\b|\bcobro\b|\bcobrando\b|\bfrete\b|\bparcelado\b|\bentrego\b|\baceito\b|\busd\b|\bcash\b)/i;
+
+function hasSaleContent(value) {
+  if (!value) return false;
+  if (typeof value === "string") return SALE_BLOCKED_REGEX.test(value);
+  if (Array.isArray(value)) return value.some(hasSaleContent);
+  if (typeof value === "object") return Object.values(value).some(hasSaleContent);
+  return false;
+}
 
 function signToken(user) {
   const secret = process.env.JWT_SECRET || "dev_secret";
@@ -44,15 +59,19 @@ function auth(req, res, next) {
 }
 
 function hashOTP(email, otp) {
-  return crypto.createHash("sha256").update(`${email}:${otp}:${process.env.OTP_SECRET || "petcrush_otp_secret"}`).digest("hex");
+  return crypto
+    .createHash("sha256")
+    .update(`${email}:${otp}:${process.env.OTP_SECRET || "petcrush_otp_secret"}`)
+    .digest("hex");
 }
 
 function createOtpCode() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
+// ✅ Por enquanto, OTP vai pro console (modo dev). Depois integra um provedor de e-mail.
 async function sendOtpEmail(email, otp) {
-  console.log(`[petcrush-api] OTP for ${email}: ${otp}`);
+  console.log(`[petcrushes-api] OTP for ${email}: ${otp}`);
   return false;
 }
 
@@ -82,7 +101,7 @@ async function upsertUserFromIdentity({ email, name, provider, verified }) {
 }
 
 // Health
-app.get("/health", (req, res) => res.json({ ok: true, name: "petcrush-api" }));
+app.get("/health", (req, res) => res.json({ ok: true, name: "petcrushes-api" }));
 
 app.get("/auth/me", auth, async (req, res) => {
   const user = await prisma.user.findUnique({ where: { id: req.user.sub } });
@@ -129,7 +148,10 @@ app.post("/auth/verify-otp", async (req, res) => {
 
   const ok = record.codeHash === hashOTP(email, code);
   if (!ok) {
-    await prisma.verificationCode.update({ where: { id: record.id }, data: { attempts: { increment: 1 } } });
+    await prisma.verificationCode.update({
+      where: { id: record.id },
+      data: { attempts: { increment: 1 } }
+    });
     return res.status(400).json({ error: "OTP_INVALID" });
   }
 
@@ -201,6 +223,21 @@ if (process.env.NODE_ENV !== "production") {
 
 // --- Pets ---
 app.post("/pets", auth, async (req, res) => {
+  // ✅ Bloqueio anti-venda
+  const fieldsForSaleCheck = {
+    displayName: req.body?.displayName,
+    species: req.body?.species,
+    breed: req.body?.breed,
+    region: req.body?.region,
+    about: req.body?.about,
+    healthNotes: req.body?.healthNotes
+  };
+
+  if (hasSaleContent(fieldsForSaleCheck)) {
+    console.log("[petcrushes-api] SALE_CONTENT_BLOCKED", { userId: req.user?.sub, email: req.user?.email });
+    return res.status(400).json({ error: "SALE_CONTENT_BLOCKED", message: SALE_BLOCK_MESSAGE });
+  }
+
   const schema = z.object({
     displayName: z.string().min(1),
     species: z.string().min(2),
@@ -218,7 +255,7 @@ app.post("/pets", auth, async (req, res) => {
     about: z.string().max(800).optional(),
     media: z.object({
       photos: z.array(z.string().url()).min(3),
-      video: z.string().url()
+      video: z.string().url() // ✅ vídeo obrigatório
     })
   });
 
@@ -283,5 +320,5 @@ app.get("/chats", auth, async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`[petcrush-api] listening on :${PORT}`);
+  console.log(`[petcrushes-api] listening on :${PORT}`);
 });
