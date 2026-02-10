@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum Size {
+  SMALL
+  MEDIUM
+  LARGE
+}
+
+enum Objective {
+  BREEDING
+  COMPANIONSHIP
+  SOCIALIZATION
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  locale    String   @default("pt-BR")
+  region    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pets   Pet[]
+  likes  Like[]
+}
+
+model Pet {
+  id          String    @id @default(uuid())
+  ownerId     String
+  owner       User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  displayName String
+  species     String
+  breed       String
+  gender      Gender
+  size        Size?
+  colors      String[]
+  ageMonths   Int
+  pedigree    Boolean
+  vaccinated  Boolean?
+  neutered    Boolean?
+  healthNotes String?
+  objective   Objective
+  region      String
+  about       String?
+
+  photos      String[]
+  videoUrl    String?
+
+  isDonation  Boolean   @default(false)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  likes       Like[]
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  petId     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pet  Pet  @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, petId], name: "userId_petId")
+}
