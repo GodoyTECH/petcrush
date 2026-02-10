@@ -1,4 +1,4 @@
-# PetCrush 🐾❤️
+# PetCrushes 🐾❤️
 Web app + API base (monorepo) for a matchmaking + donations platform for **domesticated pets** (dogs, cats, rabbits, hamsters, birds, etc.).
 
 This repo is intentionally a **clean, production-ish starter** so Codex can implement the full feature set without getting lost.
