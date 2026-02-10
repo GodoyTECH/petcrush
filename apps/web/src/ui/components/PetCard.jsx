@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { clsx } from "clsx";
-import { useAuth } from "../state.js";
+import { useAuth } from "../state.jsx";
 import { likePet } from "../api.js";
 
 function Badge({ children }) {

@@ -1,5 +1,5 @@
 import React from "react";
-import { useAuth } from "../state.js";
+import { useAuth } from "../state.jsx";
 
 export function Chat() {
   const { isAuthed } = useAuth();
